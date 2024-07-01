@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employer Branding Interview</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        #question {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .answer-option {
+            margin: 10px 0;
+        }
+        #submit, #restart {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        #submit:hover, #restart:hover {
+            background-color: #2980b9;
+        }
+        #summary, #result {
+            margin-top: 20px;
+            border-top: 1px solid #bdc3c7;
+            padding-top: 20px;
+        }
+        .result-red {
+            color: #e74c3c;
+        }
+        .result-yellow {
+            color: #f39c12;
+        }
+        .result-green {
+            color: #2ecc71;
+        }
+        #chartContainer {
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Employer Branding Selbsteinschätzung</h1>
+    <p>Bitte wählen Sie die am besten passende Antwort für jede Frage aus.</p>
+    
+    <div id="interview">
+        <p id="question"></p>
+        <div id="answers"></div>
+    </div>
+    
+    <button id="submit">Nächste Frage</button>
+    
+    <div id="result" style="display: none;">
+        <h2>Ihr Employer Branding Ergebnis</h2>
+        <p id="score"></p>
+        <p id="interpretation"></p>
+        <div id="chartContainer">
+            <canvas id="resultChart"></canvas>
+        </div>
+    </div>
+
+    <div id="summary" style="display: none;">
+        <h2>Zusammenfassung Ihrer Antworten:</h2>
+        <div id="summaryContent"></div>
+        <button id="restart">Interview neu starten</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "Wie klar definiert ist Ihre Arbeitgebermarke?",
+                options: [
+                    {text: "Wir haben keine definierte Arbeitgebermarke", score: 0},
+                    {text: "Wir haben einige Ideen, aber nichts Konkretes", score: 1},
+                    {text: "Wir haben eine definierte Marke, die aber nicht konsequent umgesetzt wird", score: 2},
+                    {text: "Wir haben eine klar definierte und konsequent umgesetzte Arbeitgebermarke", score: 3}
+                ]
+            },
+            {
+                question: "Wie gut kommunizieren Sie Ihre Unternehmenskultur nach außen?",
+                options: [
+                    {text: "Wir kommunizieren unsere Kultur nicht aktiv", score: 0},
+                    {text: "Wir erwähnen unsere Kultur gelegentlich", score: 1},
+                    {text: "Wir kommunizieren unsere Kultur regelmäßig", score: 2},
+                    {text: "Unsere Kultur ist ein zentraler Bestandteil unserer externen Kommunikation", score: 3}
+                ]
+            },
+            {
+                question: "Wie aktiv sind Sie in sozialen Medien bezüglich Employer Branding?",
+                options: [
+                    {text: "Wir nutzen keine sozialen Medien für Employer Branding", score: 0},
+                    {text: "Wir posten gelegentlich auf sozialen Medien", score: 1},
+                    {text: "Wir haben eine regelmäßige Präsenz in sozialen Medien", score: 2},
+                    {text: "Wir haben eine umfassende Social-Media-Strategie für Employer Branding", score: 3}
+                ]
+            },
+            {
+                question: "Wie gut integrieren Sie Mitarbeitergeschichten in Ihr Employer Branding?",
+                options: [
+                    {text: "Wir nutzen keine Mitarbeitergeschichten", score: 0},
+                    {text: "Wir haben einige wenige Mitarbeitergeschichten", score: 1},
+                    {text: "Wir nutzen regelmäßig Mitarbeitergeschichten", score: 2},
+                    {text: "Mitarbeitergeschichten sind ein zentraler Bestandteil unseres Employer Brandings", score: 3}
+                ]
+            },
+            {
+                question: "Wie gut ist Ihr Onboarding-Prozess?",
+                options: [
+                    {text: "Wir haben keinen strukturierten Onboarding-Prozess", score: 0},
+                    {text: "Wir haben einen einfachen Onboarding-Prozess", score: 1},
+                    {text: "Wir haben einen gut strukturierten Onboarding-Prozess", score: 2},
+                    {text: "Unser Onboarding-Prozess ist umfassend und wird ständig verbessert", score: 3}
+                ]
+            },
+            {
+                question: "Wie gut messen Sie die Effektivität Ihrer Employer Branding Maßnahmen?",
+                options: [
+                    {text: "Wir messen die Effektivität nicht", score: 0},
+                    {text: "Wir schauen gelegentlich auf einige Kennzahlen", score: 1},
+                    {text: "Wir haben ein Set von Kennzahlen, die wir regelmäßig überprüfen", score: 2},
+                    {text: "Wir haben ein umfassendes System zur Messung und Optimierung unserer Maßnahmen", score: 3}
+                ]
+            },
+            {
+                question: "Wie stark ist Ihr Fokus auf Work-Life-Balance in Ihrem Employer Branding?",
+                options: [
+                    {text: "Work-Life-Balance ist kein Fokus unseres Employer Brandings", score: 0},
+                    {text: "Wir erwähnen Work-Life-Balance gelegentlich", score: 1},
+                    {text: "Work-Life-Balance ist ein wichtiger Teil unseres Employer Brandings", score: 2},
+                    {text: "Work-Life-Balance ist ein zentraler Pfeiler unseres Employer Brandings", score: 3}
+                ]
+            },
+            {
+                question: "Wie gut integrieren Sie Diversity und Inklusion in Ihr Employer Branding?",
+                options: [
+                    {text: "Diversity und Inklusion sind kein Teil unseres Employer Brandings", score: 0},
+                    {text: "Wir erwähnen Diversity und Inklusion gelegentlich", score: 1},
+                    {text: "Diversity und Inklusion sind wichtige Aspekte unseres Employer Brandings", score: 2},
+                    {text: "Diversity und Inklusion sind zentrale Säulen unseres Employer Brandings", score: 3}
+                ]
+            },
+            {
+                question: "Wie gut nutzen Sie Ihre Karrierewebseite für Employer Branding?",
+                options: [
+                    {text: "Wir haben keine spezielle Karrierewebseite", score: 0},
+                    {text: "Unsere Karrierewebseite listet nur offene Stellen", score: 1},
+                    {text: "Unsere Karrierewebseite bietet Informationen über die Arbeit bei uns", score: 2},
+                    {text: "Unsere Karrierewebseite ist ein umfassendes Portal für potenzielle Bewerber", score: 3}
+                ]
+            },
+            {
+                question: "Wie stark involvieren Sie Ihre Mitarbeiter in Ihr Employer Branding?",
+                options: [
+                    {text: "Unsere Mitarbeiter sind nicht in unser Employer Branding involviert", score: 0},
+                    {text: "Einige Mitarbeiter sind gelegentlich involviert", score: 1},
+                    {text: "Viele unserer Mitarbeiter sind regelmäßig involviert", score: 2},
+                    {text: "Unsere Mitarbeiter sind zentrale Botschafter unseres Employer Brandings", score: 3}
+                ]
+            }
+        ];
+
+        let currentQuestion = 0;
+        const answers = {};
+
+        const questionEl = document.getElementById('question');
+        const answersEl = document.getElementById('answers');
+        const submitBtn = document.getElementById('submit');
+        const interviewEl = document.getElementById('interview');
+        const resultEl = document.getElementById('result');
+        const scoreEl = document.getElementById('score');
+        const interpretationEl = document.getElementById('interpretation');
+        const summaryEl = document.getElementById('summary');
+        const summaryContentEl = document.getElementById('summaryContent');
+        const restartBtn = document.getElementById('restart');
+
+        function showQuestion() {
+            const q = questions[currentQuestion];
+            questionEl.textContent = `Frage ${currentQuestion + 1} von ${questions.length}: ${q.question}`;
+            answersEl.innerHTML = q.options.map((option, index) => `
+                <div class="answer-option">
+                    <input type="radio" name="answer" id="option${index}" value="${index}">
+                    <label for="option${index}">${option.text}</label>
+                </div>
+            `).join('');
+            
+            submitBtn.textContent = currentQuestion === questions.length - 1 ? "Ergebnis anzeigen" : "Nächste Frage";
+        }
+
+        function calculateScore() {
+            let totalScore = 0;
+            for (let i = 0; i < questions.length; i++) {
+                totalScore += questions[i].options[answers[i]].score;
+            }
+            return (totalScore / (questions.length * 3)) * 100;
+        }
+
+        function showResult() {
+            const score = calculateScore();
+            scoreEl.textContent = `Ihr Ergebnis: ${score.toFixed(2)}%`;
+            
+            let interpretation, className;
+            if (score < 45) {
+                interpretation = "Ihr Unternehmen befindet sich im roten Bereich. Es gibt noch erhebliches Potenzial zur Verbesserung Ihres Employer Brandings.";
+                className = "result-red";
+            } else if (score < 90) {
+                interpretation = "Ihr Unternehmen befindet sich im gelben Bereich. Sie sind auf einem guten Weg, aber es gibt noch Raum für Verbesserungen in Ihrem Employer Branding.";
+                className = "result-yellow";
+            } else {
+                interpretation = "Gratulation! Ihr Unternehmen befindet sich im grünen Bereich. Sie haben ein ausgezeichnetes Employer Branding etabliert.";
+                className = "result-green";
+            }
+            
+            interpretationEl.textContent = interpretation;
+            interpretationEl.className = className;
+            
+            interviewEl.style.display = 'none';
+            submitBtn.style.display = 'none';
+            resultEl.style.display = 'block';
+            summaryEl.style.display = 'block';
+            
+            createChart(score);
+        }
+
+        function createChart(score) {
+            const ctx = document.getElementById('resultChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Erreichter Score', 'Verbesserungspotenzial'],
+                    datasets: [{
+                        data: [score, 100 - score],
+                        backgroundColor: [
+                            score < 45 ? '#e74c3c' : (score < 90 ? '#f39c12' : '#2ecc71'),
+                            '#ecf0f1'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Ihr Employer Branding Score'
+                        }
+                    }
+                }
+            });
+        }
+
+        function showSummary() {
+            let summaryHTML = '';
+            for (let i = 0; i < questions.length; i++) {
+                summaryHTML += `<p><strong>Frage ${i + 1}: ${questions[i].question}</strong><br>Ihre Antwort: ${questions[i].options[answers[i]].text}</p>`;
+            }
+            summaryContentEl.innerHTML = summaryHTML;
+        }
+
+        submitBtn.addEventListener('click', () => {
+            const selectedAnswer = document.querySelector('input[name="answer"]:checked');
+            if (selectedAnswer) {
+                answers[currentQuestion] = parseInt(selectedAnswer.value);
+                currentQuestion++;
+                if (currentQuestion < questions.length) {
+                    showQuestion();
+                } else {
+                    showResult();
+                    showSummary();
+                }
+            } else {
+                alert('Bitte wählen Sie eine Antwort aus.');
+            }
+        });
+
+        restartBtn.addEventListener('click', () => {
+            currentQuestion = 0;
+            for (let i = 0; i < questions.length; i++) {
+                answers[i] = null;
+            }
+            interviewEl.style.display = 'block';
+            submitBtn.style.display = 'block';
+            submitBtn.textContent = "Nächste Frage";
+            resultEl.style.display = 'none';
+            summaryEl.style.display = 'none';
+            showQuestion();
+        });
+
+        showQuestion();
+    </script>
+</body>
+</html>
